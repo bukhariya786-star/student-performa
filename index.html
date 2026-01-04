@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Donation Receipt</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Malayalam Font -->
+<link href="https://fonts.googleapis.com/css2?family=Manjari:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- PDF Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+body{
+  margin:0;
+  padding:20px;
+  background:#f2f2f2;
+  font-family: 'Manjari', sans-serif;
+}
+
+/* Search Area */
+.search-box{
+  max-width:500px;
+  margin:0 auto 20px;
+  display:flex;
+  gap:10px;
+}
+.search-box input{
+  flex:1;
+  padding:12px;
+  font-size:16px;
+}
+.search-box button{
+  padding:12px 18px;
+  font-size:15px;
+  cursor:pointer;
+}
+
+/* Receipt */
+.receipt{
+  width:794px;
+  height:1123px;
+  margin:auto;
+  background:url("background.png") no-repeat center;
+  background-size:cover;
+  position:relative;
+  color:#ffffff;
+}
+
+/* Common text */
+.field{
+  position:absolute;
+  font-size:18px;
+}
+
+/* Text positions (adjust if needed) */
+.receipt-no{ top:520px; left:110px; }
+.date{ top:560px; left:110px; }
+.donor{ top:600px; left:110px; }
+
+/* Amount ₹ box */
+.amount-box{
+  position:absolute;
+  top:120px;
+  left:90px;
+  font-size:30px;
+  font-weight:bold;
+}
+
+/* Signature */
+.signature-img{
+  position:absolute;
+  bottom:150px;
+  right:130px;
+  width:160px;
+}
+.sign-name{
+  position:absolute;
+  bottom:115px;
+  right:130px;
+  font-size:16px;
+}
+
+/* Mobile */
+@media(max-width:850px){
+  .receipt{
+    transform:scale(0.45);
+    transform-origin: top center;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- SEARCH -->
+<div class="search-box">
+  <input type="text" id="searchReceipt" placeholder="Receipt No">
+  <button onclick="searchReceipt()">Search</button>
+  <button onclick="resetAll()">New Search</button>
+</div>
+
+<!-- RECEIPT -->
+<div id="receipt" class="receipt">
+
+  <div class="field receipt-no">
+    Receipt No : <span id="rno"></span>
+  </div>
+
+  <div class="field date">
+    Date : <span id="date"></span>
+  </div>
+
+  <div class="field donor">
+    Donor Name : <span id="donor"></span>
+  </div>
+
+  <div class="amount-box">
+    ₹ <span id="amount"></span>
+  </div>
+
+  <img src="signature.png" class="signature-img" alt="Signature">
+
+  <div class="sign-name">
+    Authorized Signatory : <span id="signName"></span>
+  </div>
+
+</div>
+
+<script>
+const TSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRbGUZhtMFw7xyfMvQ40Cf2R3PAI7oR-dRTBBhmwzHEIJFj__066F0l5f0gmk3jv2-oHgHRnMGVyRqr/pub?gid=58253840&single=true&output=tsv";
+
+function searchReceipt(){
+  const value = document.getElementById("searchReceipt").value.trim();
+  if(!value){ alert("Enter Receipt No"); return; }
+
+  fetch(TSV_URL)
+    .then(res => res.text())
+    .then(text => {
+      const rows = text.split("\n").slice(1);
+      let found = false;
+
+      rows.forEach(row=>{
+        const c = row.split("\t");
+        if(c[0] && c[0].trim() === value){
+          found = true;
+          document.getElementById("rno").innerText = c[0];
+          document.getElementById("date").innerText = c[1];
+          document.getElementById("donor").innerText = c[2];
+          document.getElementById("amount").innerText = c[3];
+          document.getElementById("signName").innerText = c[5] || "";
+        }
+      });
+
+      if(found){
+        setTimeout(downloadPDF,500);
+      }else{
+        alert("Receipt not found");
+      }
+    });
+}
+
+function downloadPDF(){
+  const element = document.getElementById("receipt");
+  html2pdf().from(element).set({
+    margin:0,
+    filename:"Receipt.pdf",
+    html2canvas:{ scale:2 },
+    jsPDF:{ unit:"px", format:[794,1123], orientation:"portrait" }
+  }).save();
+}
+
+function resetAll(){
+  document.getElementById("searchReceipt").value="";
+  document.getElementById("rno").innerText="";
+  document.getElementById("date").innerText="";
+  document.getElementById("donor").innerText="";
+  document.getElementById("amount").innerText="";
+  document.getElementById("signName").innerText="";
+}
+</script>
+
+</body>
+</html>
